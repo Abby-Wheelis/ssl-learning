@@ -1,15 +1,21 @@
 # copied from https://docs.python.org/3/library/http.client.html
 import socket
 import ssl
-import http.client
+import pprint
 
-hostname = 'www.python.org'
-context = ssl.create_default_context()
-conn = http.client.HTTPSConnection(hostname)
-conn.request("GET", "/", headers={"Host": hostname})
-response = conn.getresponse()
-print(response.status, response.reason)
+def main():
 
-# with socket.create_connection((hostname, 443)) as sock:
-#     with context.wrap_socket(sock, server_hostname=hostname) as ssock:
-#         print(ssock.version())
+    context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+    context.load_verify_locations("./cert.pem")
+
+    conn = context.wrap_socket(socket.socket(socket.AF_INET),
+                               server_hostname="localhost")
+    conn.connect(("localhost", 10023))
+    cert = conn.getpeercert()
+    pprint.pprint(cert)
+    conn.sendall(b'hello')
+    conn.close()
+
+if __name__ == '__main__':
+    main()
+

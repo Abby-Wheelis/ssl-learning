@@ -2,12 +2,39 @@
 import socket
 import ssl
 
-context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-context.load_cert_chain('./cert.pem', './key.pem')
+def do_something(data):
+    if len(data) == 0: return False
+    print(data)
+    return True
 
-with socket.socket(socket.AF_INET, socket.SOCK_STREAM, 0) as sock:
-    sock.bind(('127.0.0.1', 8443))
-    sock.listen(5)
-    with context.wrap_socket(sock, server_side=True) as ssock:
-        conn, addr = ssock.accept()
-        ...
+def deal_with_client(connstream):
+    data = connstream.recv(1024)
+    # empty data means the client is finished with us
+    while data:
+        if not do_something(data):
+            # we'll assume do_something returns False
+            # when we're finished with client
+            break
+        data = connstream.recv(1024)
+
+def main():
+
+    context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
+    context.load_cert_chain('./cert.pem', './key.pem')
+
+    bindsocket = socket.socket()
+    bindsocket.bind(('localhost', 10023))
+    bindsocket.listen(5)
+
+    while True:
+        newsocket, fromaddr = bindsocket.accept()
+        connstream = context.wrap_socket(newsocket, server_side=True)
+        try:
+            deal_with_client(connstream)
+        except socket.error as e:
+            connstream.close()
+        finally:
+            connstream.close()
+
+if __name__ == '__main__':
+    main()
