@@ -2,10 +2,13 @@
 import socket
 import ssl
 
+
 def do_something(data):
-    if len(data) == 0: return False
+    if len(data) == 0:
+        return False
     print(data)
     return True
+
 
 def deal_with_client(connstream):
     data = connstream.recv(1024)
@@ -17,13 +20,16 @@ def deal_with_client(connstream):
             break
         data = connstream.recv(1024)
 
+
 def main():
 
     context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
-    context.load_cert_chain('./cert.pem', './key.pem')
+    context.load_verify_locations(cafile="./root.pem")
+    context.load_verify_locations(cafile="./intca.pem")
+    context.load_cert_chain("./test_server_chain.pem", "skey.pem")
 
     bindsocket = socket.socket()
-    bindsocket.bind(('localhost', 10023))
+    bindsocket.bind(("localhost", 10023))
     bindsocket.listen(5)
 
     while True:
@@ -36,5 +42,6 @@ def main():
         finally:
             connstream.close()
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()
